@@ -1,73 +1,74 @@
 import axios from 'axios'
 import { useState, useEffect } from 'react'
 
-function NoteForm({
-    editNote,
-    setEditNote, 
-    setShowNoteForm, 
-    setNotes}) {
-    const [noteText, setNoteText] = useState('')
+import { useStore } from '../store'
 
-    useEffect(() => {
-        if (editNote) {
-            setNoteText(editNote.text)
-        }
-    }, [])
+function NoteForm() {
+  const { state, setState } = useStore()
+  const [noteText, setNoteText] = useState('')
 
-    const createOrEditNote = async (e) => {
-        e.preventDefault()
-
-        if (!editNote) {
-            const res = await axios.post('/api/notes', {
-                text: noteText
-            })
-
-            setNotes((oldState) => {
-                return [...oldState, res.data]
-            })
-        } else {
-            await axios.put('/api/note/' + editNote._id, {
-                text: noteText
-            })
-
-            setNotes((oldState) => {
-                // const note = oldState.find((n) => n._id === editNote._id)
-    
-                editNote.text = noteText
-    
-                return [...oldState]
-            })
-        }
-        
-        
-        setShowNoteForm(false)
-        setEditNote(null)
+  useEffect(() => {
+    if (state.editNote) {
+      setNoteText(state.editNote.text)
     }
+  }, [])
 
-    const closeModal = () => {
-        setEditNote(null)
-        setShowNoteForm(false)
+  const createOrEditNote = async (e) => {
+    e.preventDefault()
+
+    if (!state.editNote) {
+      const res = await axios.post('/api/notes', {
+        text: noteText
+      })
+
+      setState({
+        ...state,
+        showNoteForm: false,
+        notes: [...state.notes, res.data]
+      })
+    } else {
+      await axios.put('/api/note/' + state.editNote._id, {
+        text: noteText
+      })
+
+      state.editNote.text = noteText
+
+      setState({
+        ...state,
+        notes: [...state.notes],
+        showNoteForm: false,
+        editNote: null
+      })
     }
+  }
 
-    const handleInputChange = (e) => {
-        setNoteText(e.target.value)
-    }
+  const closeModal = () => {
+    setState({
+      ...state,
+      showNoteForm: false,
+      editNote: null
+    })
+  }
 
-    return (
-        <div className="note-form">
-            <h1 className="text-center">{editNote ? 'Edit' : 'Create'} Note</h1>
+  const handleInputChange = (e) => {
+    setNoteText(e.target.value)
+  }
 
-            <form onSubmit={createOrEditNote} className="column">
-                <input 
-                    value={noteText}
-                    onChange={handleInputChange} 
-                    type="text" 
-                    placeholder="Enter the note text" />
-                <button>{editNote ? 'Save' : 'Create'}</button>
-                <button onClick={closeModal} className="cancel-btn">Cancel</button>
-            </form>
-        </div>
-    )
+  return (
+    <div className="note-form">
+      <h1 className="text-center">{state.editNote ? 'Edit' : 'Create'} Note</h1>
+
+      <form onSubmit={createOrEditNote} className="column">
+        <input
+          value={noteText}
+          onChange={handleInputChange}
+          type="text"
+          placeholder="Enter the note text" />
+        <button>{state.editNote ? 'Save' : 'Create'}</button>
+        <button onClick={closeModal} className="cancel-btn">Cancel</button>
+      </form>
+    </div>
+  )
 }
 
 export default NoteForm

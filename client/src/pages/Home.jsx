@@ -2,22 +2,27 @@ import { useEffect, useState } from 'react'
 import axios from 'axios'
 import dayjs from 'dayjs'
 
-function Home({
-    setShowNoteForm,
-    setEditNote,
-    notes,
-    setNotes }) {
+import {useStore} from '../store'
+
+function Home() {
+    const {state, setState} = useStore()
 
     useEffect(() => {
         axios.get('/api/notes')
             .then((res) => {
-                setNotes(res.data)
+                setState({
+                    ...state,
+                    notes: res.data
+                })
             })
     }, [])
 
     const handleEditNote = (note) => {
-        setEditNote(note)
-        setShowNoteForm(true)
+        setState({
+            ...state,
+            editNote: note,
+            showNoteForm: true
+        })
     }
 
     const deleteNote = async (note_id, index) => {
@@ -27,14 +32,20 @@ function Home({
         if (confirmDelete) {
             await axios.delete('/api/note/' + note_id)
 
-            notes.splice(index, 1)
+            state.notes.splice(index, 1)
 
-            setNotes([...notes])
+            setState({
+                ...state,
+                notes: [...state.notes]
+            })
         } else {
             console.log('Deletion canceled by user')
         }
 
-        setEditNote(null)
+        setState({
+            ...state,
+            editNote: null
+        })
     }
 
     return (
@@ -42,9 +53,9 @@ function Home({
             <h1>Welcome Note Taker</h1>
 
             <main className="notes-output">
-                {!notes.length && <h2>Add some notes!!</h2>}
-                
-                {notes.map((note, index) => (
+                {!state.notes.length && <h2>Add some notes!!</h2>}
+
+                {state.notes.map((note, index) => (
                     <div key={note._id} className="note">
                         <h3>{note.text}</h3>
                         <p>Created On: {dayjs(note.createdAt).format('MM/DD/YYYY hh:mm a')}</p>
